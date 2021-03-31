@@ -2552,6 +2552,15 @@ if __name__ == "__main__":
                             if args.layout == "ru":
                                 char = iso_ru[char]
 
+                            if args.layout == "pt" and char in ["<", ">"]: # "<" and ">" are not working in 'pt' keyboard layout.
+                                print('[-] Error at line {}: "{}"; "{}" is not a valid character for "pt" keyboard layout'.format(index, line, char))
+                                print("[X] Quitting...")
+                                src.close()
+                                dest.close()
+                                #os.remove(args.hunterscript)
+                                os.remove("tmp.txt")
+                                exit()
+
                             line = dicts[args.layout+'_bin'].get(char)
                             if line is not None:
                                 if isinstance(line, str):
