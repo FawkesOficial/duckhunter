@@ -1,5 +1,9 @@
 Duck Hunter 
 ==========
+```diff
++ Modified by @FawkesOficial.
++ Working 31/03/2021.
+```
 
 Converts a USB Rubber ducky script into a Kali Nethunter friendly format for the HID attack
 
