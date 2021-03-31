@@ -2552,7 +2552,7 @@ if __name__ == "__main__":
                             if args.layout == "ru":
                                 char = iso_ru[char]
 
-                            if args.layout == "pt" and char in ["<", ">"]: # "<" and ">" are not working in 'pt' keyboard layout.
+                            if args.layout == "pt" and char in ["<", ">", "\\", "|"]: # "<", ">", "\\" and "|" are not working in 'pt' keyboard layout.
                                 print('[-] Error at line {}: "{}" is not a valid character for "pt" keyboard layout (Currently Not Working)'.format(index, char))
                                 print("[X] Quitting...")
                                 src.close()
@@ -2586,7 +2586,7 @@ if __name__ == "__main__":
                             if args.layout == "ru":
                                 char = iso_ru[char]
                             
-                            if args.layout == "pt" and char in ["<", ">"]: # "<" and ">" are not working in 'pt' keyboard layout.
+                            if args.layout == "pt" and char in ["<", ">", "\\", "|"]: # "<", ">", "\\" and "|" are not working in 'pt' keyboard layout.
                                 print('[-] Error at line {}: "{}" is not a valid character for "pt" keyboard layout (Currently Not Working)'.format(index, char))
                                 print("[X] Quitting...")
                                 src.close()
