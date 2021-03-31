@@ -1,25 +1,30 @@
 #!/usr/bin/env python3
 
-#Created by @binkybear and @byt3bl33d3r
+import argparse         # Handle arguments
+import os               # To write hid comands to system
 
-import sys
-import re
-import os
-import argparse
-from decimal import Decimal #for conversion milliseconds -> seconds
+'''
 
-parser = argparse.ArgumentParser(description='Converts USB rubber ducky scripts to a Nethunter format', epilog="Quack Quack")
+Arguments for filetohid.py
+python3 filetohid.py -f [inputfile] -l us
+python3 filetohid.py -s "this is a string" -l us
+
+This is a modified version of duckhunter.py.
+Thanks to @byt3bl33d3r and @TheNain38 for help with original code.
+
+'''
+parser = argparse.ArgumentParser(description='Take input file or string and output it to hid')
 parser.add_argument('-l', type=str, dest='layout', choices=['us', 'fr', 'de', 'es', 'sv', 'it', 'uk', 'ru', 'dk', 'no', 'pt', 'be', 'cm', 'ca', 'hu'], help='Keyboard layout')
-parser.add_argument('duckyscript', help='Ducky script to convert')
-parser.add_argument('hunterscript', help='Output script')
-
+parser.add_argument('-f', '--file', type=str, help="Input file")
+parser.add_argument('-s', '--string', type=str, help="Input string")
 args = parser.parse_args()
 
-# Input file is argument / output file is output.txt
-infile = open(args.duckyscript)
-dest = open(args.hunterscript, 'w')
-tmpfile = open("tmp.txt", "w")
-
+# Variables for general keyboard commands, arguments
+prefix = "echo "
+suffix = " | /system/xbin/hid-keyboard /dev/hidg0 keyboard"
+input_string = args.string
+filename = args.file
+language = args.layout
 
 dicts = {
     'us_bin' : {
@@ -2379,234 +2384,82 @@ iso_ru = {
     #"\x7F": "" #del
 }
 
+# If no language is specified, default to English
+if not language:
+    language = "us"
 
-def duckyRules (source):
 
-    tmpfile = source
+def do_file(filename, lang):
+    try:
+        os.system("/system/xbin/dos2unix " + filename)
+        f = open(filename, "r")
+        for line in f:  # Read a line in the file
+            for char in line:  # Read each character in that line
+                #
+                #  Start conversion here
+                #
+                if char != '\n':  # If the character is not a new line
+                    if lang == "ru":  # If russian, set characters to russian
+                        char = iso_ru[char]
 
-    for (k,v) in list(WINCMD_rules.items()):
-        regex = re.compile(k)
-        tmpfile = regex.sub(v, tmpfile)
+                    line = dicts[lang+'_bin'].get(char)
+                    if line is not None:
+                        if isinstance(line, str):
+                            os.system('%s%s%s\n' % (prefix, line.rstrip('\n').strip(), suffix))
+                            #print('%s%s%s\n' % (prefix, line.rstrip('\n').strip(), suffix))
+                        else:
+                            for elem in line:
+                                os.system('%s%s%s\n' % (prefix, elem.rstrip('\n').strip(), suffix))
+                                #print('%s%s%s\n' % (prefix, elem.rstrip('\n').strip(), suffix))
+                    else:
+                        line = dicts[lang][char]
+                        os.system('%s%s%s\n' % (prefix, line.rstrip('\n').strip(), suffix))
+                        #os.system('echo -ne "\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00" > /dev/hidg0\n') # releases key
+                        os.system('sleep 0.03 \n') # Slow things down
+                elif char == '\n':
+                    os.system('echo enter | /system/xbin/hid-keyboard /dev/hidg0 keyboard\n')
+    finally:
+        f.close()
 
-    for (k,v) in list(rules.items()):
-        regex = re.compile(k)
-        tmpfile = regex.sub(v, tmpfile)
 
-    return tmpfile
+def do_string(string, lang):
+    for char in string:
+        #
+        #  Start conversion here
+        #
+        if char != '\n' and char != '\r':  # If the character is not a new line
+            if lang == "ru":  # If russian, set characters to russian
+                char = iso_ru[char]
 
-if __name__ == "__main__":
-
-    rules = {
-        r'ALT' : 'left-alt',
-        r'GUI' : 'left-meta',
-        r'WINDOWS' : 'left-meta',
-        r'COMMAND' : 'left-meta',
-        r'ALT' : 'left-alt',
-        r'ALTGR' : 'right-alt',
-        r'CONTROL' : 'left-ctrl',
-        r'CTRL' : 'left-ctrl',
-        r'SHIFT' : 'left-shift',
-        r'MENU' : 'left-shift f10',
-        r'APP' : 'escape',
-        r'ESCAPE' : 'escape',
-        r'ESC' : 'esc',
-        r'END' : 'end',
-        r'SPACE' : 'space',
-        r'TAB' : 'tab',
-        r'PRINTSCREEN' : 'print',
-        r'ENTER' : 'enter',
-        r'UPARROW' : 'up',
-        r'UP' : 'up',
-        r'DOWNARROW' : 'down',
-        r'DOWN' : 'down',
-        r'LEFTARROW' : 'left',
-        r'LEFT' : 'left',
-        r'RIGHTARROW' : 'right',
-        r'RIGHT' : 'right',
-        r'CAPSLOCK' : 'capslock',
-        r'F1' : 'f1',
-        r'F2' : 'f2',
-        r'F3' : 'f3',
-        r'F4' : 'f4',
-        r'F5' : 'f5',
-        r'F6' : 'f6',
-        r'F7' : 'f7',
-        r'F8' : 'f8',
-        r'F9' : 'f9',
-        r'F10' : 'f10',
-        r'F11' : 'f11',
-        r'F12' : 'f12',
-        r'F13' : 'f13',
-        r'F14' : 'f14',
-        r'F15' : 'f15',
-        r'F16' : 'f16',
-        r'F17' : 'f17',
-        r'F18' : 'f18',
-        r'F19' : 'f19',
-        r'F20' : 'f20',
-        r'F21' : 'f21',
-        r'F22' : 'f22',
-        r'F23' : 'f23',
-        r'F24' : 'f24',
-        r'DELETE' : 'delete',
-        r'INSERT' : 'insert',
-        r'NUMLOCK' : 'numlock',
-        r'PAGEUP' : 'pgup',
-        r'PAGEDOWN' : 'pgdown',
-        r'PRINTSCREEN' : 'print',
-        r'PRINTSCRN' : 'print',
-        r'PRNTSCRN' : 'print',
-        r'PRTSCN' : 'print',
-        r'PRTSCR' : 'print',
-        r'PRSC' : 'print',
-        r'BREAK' : 'pause',
-        r'PAUSE' : 'pause',
-        r'SCROLLLOCK' : 'scrolllock',
-        r'BACKSPACE' : 'backspace',
-        r'BKSP' : 'backspace',
-        r'MOUSE MIDDLECLICK' : '--b3',
-        r'MOUSE RIGHTCLICK' : '--b2',
-        r'MOUSE LEFTCLICK' : '--b1',
-        r'MOUSE leftCLICK' : '--b1', # Regex is lowering LEFT to left so we need to catch it.
-        r'SLEEP' : 'DELAY',
-        r'DEFAULTDELAY' : 'DEFAULT_DELAY' # We need to add this in between each line if it's set. For debugging
-    }
-
-    # Shortcuts to Windows Command Line
-    WINCMD_rules = {
-        r'WINCMD' : 'GUI d\nDELAY 500\nGUI\nDELAY 1000\nTEXT cmd\nDELAY 1000\nENTER\nDELAY 3000',
-        r'WINCMDUAC' : 'GUI d\nDELAY 500\nGUI\nDELAY 1000\nTEXT cmd\nDELAY 1000\nCTRL SHIFT ENTER\nDELAY 2000\nLEFTARROW\nENTER\nDELAY 3000'
-    }
-
-    # For general keyboard commands
-    prefix = "echo "
-    suffix = " | /system/xbin/hid-keyboard /dev/hidg0 keyboard"
-
-    # For general mouse commands
-    prefixmouse = "echo "
-    suffixmouse = " | /system/xbin/hid-keyboard /dev/hidg1 mouse"
-
-    # Process input text
-    prefixinput = 'echo -ne "'
-    prefixoutput = '" > /dev/hidg0'
-
-    with infile as text:
-        new_text = duckyRules(text.read())
-        infile.close()
-
-    # Write regex to tmp file
-    with tmpfile as result:
-        result.write(new_text)
-        tmpfile.close()
-
-    prev_line = ''
-    default_delay = ''
-    src = open('tmp.txt', 'r')
-    for source_line in src:
-
-        if source_line == '' or source_line == '\n' or source_line.startswith('//'):
-            continue
-
-        repeat_counter = 1
-        while repeat_counter > 0:
-
-            repeat_counter -= 1
-            line = source_line
-
-            if line.startswith('DELAY '):
-                line = line.rstrip('\n')[6:].strip()
-                seconds = (Decimal(line) / Decimal(1000)) % 60
-                line = str(seconds)
-                dest.write('sleep %s\n' % line.strip().lower())
-
-            else:
-
-                if line.startswith('DEFAULT_DELAY'):
-                    line = line.rstrip('\n')[13:].strip()
-                    if line != '':
-                        seconds = (Decimal(line) / Decimal(1000)) % 60
-                        line = str(seconds)
-                    default_delay = line
-                    break
-
-                elif line.startswith('REM'):
-                    line = '#' + line.rstrip('\n')[3:]
-                    dest.write('%s\n' % line.strip())
-
-                # Mouse commands
-                elif line.startswith('--b'):
-                    dest.write('%s%s%s\n' % (prefixmouse, line.rstrip('\n').strip(), suffixmouse))
-
-                elif line.startswith('MOUSE '):
-                    line = line[6:]
-                    dest.write('%s%s%s\n' % (prefixmouse, line.rstrip('\n').strip(), suffixmouse))
-
-                # STRING to type and reads \n as ENTER
-                elif line.startswith('STRING '):
-                    line = line[7:]
-                    for char in line:
-
-                        if char != '\n':
-                            if args.layout == "ru":
-                                char = iso_ru[char]
-
-                            line = dicts[args.layout+'_bin'].get(char)
-                            if line is not None:
-                                if isinstance(line, str):
-                                    dest.write('%s%s%s\n' % (prefix, line.rstrip('\n').strip(), suffix))
-                                else:
-                                    for elem in line:
-                                        dest.write('%s%s%s\n' % (prefix, elem.rstrip('\n').strip(), suffix))
-                            else:
-                                line = dicts[args.layout][char]
-                                dest.write('%s%s%s\n' % (prefixinput, line.rstrip('\n').strip(), prefixoutput))
-                                dest.write('echo -ne "\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00" > /dev/hidg0\n') # releases key
-                                dest.write('sleep 0.03 \n') # Slow things down
-
-                    dest.write('echo enter | /system/xbin/hid-keyboard /dev/hidg0 keyboard\n') # Add enter
-
-                # TEXT to type and NOT pass \n as ENTER.  Allows text to stay put.
-                elif line.startswith('TEXT '):
-                    line = line.rstrip('\n')
-                    line = line[5:]
-                    for char in line:
-
-                        if char != '\n':
-                            if args.layout == "ru":
-                                char = iso_ru[char]
-
-                            line = dicts[args.layout+'_bin'].get(char)
-                            if line is not None:
-                                if isinstance(line, str):
-                                    dest.write('%s%s%s\n' % (prefix, line.rstrip('\n').strip(), suffix))
-                                else:
-                                    for elem in line:
-                                        dest.write('%s%s%s\n' % (prefix, elem.rstrip('\n').strip(), suffix))
-                            else:
-                                line = dicts[args.layout][char]
-                                dest.write('%s%s%s\n' % (prefixinput, line.rstrip('\n').strip(), prefixoutput))
-                                dest.write('echo -ne "\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00" > /dev/hidg0\n') # releases key
-                                dest.write('sleep 0.03 \n') # Slow things down
-
-                elif line.startswith('REPEAT '):
-                    line = line.rstrip('\n')[7:]
-                    repeat_counter = int(line)
-                    source_line = prev_line
-
-                    if source_line == '':
-                        break
-
-                    continue
-
+            line = dicts[lang+'_bin'].get(char)
+            if line is not None:
+                if isinstance(line, str):
+                    os.system('%s%s%s\n' % (prefix, line.strip(), suffix))
+                    print(('%s%s%s\n' % (prefix, line.rstrip('\n').strip(), suffix)))
                 else:
-                    dest.write('%s%s%s\n' % (prefix, line.rstrip('\n').strip(), suffix))
+                    for elem in line:
+                        os.system('%s%s%s\n' % (prefix, elem.rstrip('\n').strip(), suffix))
+                        #print('%s%s%s\n' % (prefix, elem.rstrip('\n').strip(), suffix))
+            else:
+                line = dicts[lang][char]
+                os.system('%s%s%s\n' % (prefix, line.rstrip('\n').strip(), suffix))
+                os.system('echo -ne "\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00" > /dev/hidg0\n') # releases key
+                os.system('sleep 0.03 \n') # Slow things down
 
-                if default_delay != '':
-                    dest.write('sleep %s\n' % default_delay.strip().lower())
+#
+# If input file is passed with -f, take that input file and read it
+#
+if args.file:
+    do_file(filename, language)
 
-        prev_line = source_line
+#
+# If string is passed with -s "this is a test string", print this to keyboard
+#
+if args.string:
+    do_string(input_string, language)
 
-    src.close()
-    dest.close()
-    os.remove("tmp.txt")
-    print(("File saved to location: " + (args.hunterscript)))
+#
+# Stop a user from using both string and file.  Don't be crazy!
+#
+if args.string and args.file:
+    print("Select either -f or -s, not both!")
