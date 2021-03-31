@@ -2502,7 +2502,9 @@ if __name__ == "__main__":
     prev_line = ''
     default_delay = ''
     src = open('tmp.txt', 'r')
+    index = 0
     for source_line in src:
+        index += 1
 
         if source_line == '' or source_line == '\n' or source_line.startswith('//'):
             continue
@@ -2574,7 +2576,15 @@ if __name__ == "__main__":
                         if char != '\n':
                             if args.layout == "ru":
                                 char = iso_ru[char]
-
+                            
+                            if args.layout == "pt" and char in ["<", ">"]: # "<" and ">" are not working in 'pt' keyboard layout.
+                                print('[-] Error at line {}: "{}"; "{}" is not a valid character for "pt" keyboard layout'.format(index, line, char))
+                                print("[X] Quitting...")
+                                src.close()
+                                dest.close()
+                                #os.remove(args.hunterscript)
+                                os.remove("tmp.txt")
+                                exit()
                             line = dicts[args.layout+'_bin'].get(char)
                             if line is not None:
                                 if isinstance(line, str):
@@ -2609,4 +2619,4 @@ if __name__ == "__main__":
     src.close()
     dest.close()
     os.remove("tmp.txt")
-    print(("File saved to location: " + (args.hunterscript)))
+    print(("[+] File saved to location: " + (args.hunterscript)))
